@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('新增入库明细')"/>
+    <th:block th:include="include :: ztree-css"/>
+</head>
+<style>
+    .container {
+        width: 100% !important;
+    }
+
+    .row {
+        width: 100% !important;
+    }
+
+    .col-md-3 {
+        width: 30% !important;
+    }
+
+    .col-md-9 {
+        width: 70% !important;
+    }
+</style>
+<body class="white-bg">
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="wrapper">
+                <div class="treeExpandCollapse">
+                    <a href="#" onclick="$.tree.expand()">展开</a> /
+                    <a href="#" onclick="$.tree.collapse()">折叠</a>
+                </div>
+                <div id="tree" class="ztree"></div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <!--        商品信息表格-->
+            <div class="col-sm-12 search-collapse">
+                <form id="formId">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                <label>商品编码：</label>
+                                <input type="text" name="materialCode"/>
+                            </li>
+                            <li>
+                                <label>商品名称：</label>
+                                <input type="text" name="materialName"/>
+                            </li>
+                            <li>
+                                <input name="typeId" type="hidden" id="typeId"/>
+                            </li>
+                            <li>
+                                <label>规格型号：</label>
+                                <input type="text" name="materialModel"/>
+                            </li>
+                            <li>
+                                <label>仓库：</label>
+                                <select name="stock" th:with="type=${@dict.getType('stock_info')}">
+                                    <option value="">所有</option>
+                                    <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                            th:value="${dict.dictValue}"></option>
+                                </select>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                        class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="Reset()"><i
+                                        class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-12 select-table table-striped">
+                <table id="bootstrap-table"></table>
+            </div>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: ztree-js"/>
+<script th:inline="javascript">
+    var prefix = ctx + "cpwz/stockInMain";
+
+    var unitDatas = [[${@dict.getType('pcs_unit')}]];
+    var stockDatas = [[${@dict.getType('stock_info')}]];
+    var typeDatas = [[${typeList}]];
+    var inMainCode = [[${inMainCode}]];
+    var meterialIds = [[${meterialIds}]];
+    $("#form-stockInMain-add").validate({
+        focusCleanup: true
+    });
+    function Reset(){
+        $("#typeId").val(null);
+        $.form.reset();
+
+    }
+
+    function submitHandler() {
+        var arrays = $.table.selectColumns("materialId");
+        var data = {"ids": arrays.join(), "inMainCode": inMainCode};
+        $.operate.save(prefix + "/addDetail", data);
+    }
+
+    $(function () {
+
+        var options = {
+            url: ctx + "cpwz/info/list/"+meterialIds,
+            modalName: "商品信息",
+            rememberSelected: true,
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'materialId',
+                    title: 'id',
+                    visible: false
+                },
+                {
+                    field: 'materialCode',
+                    title: '商品编码'
+                },
+                {
+                    field: 'materialName',
+                    title: '商品名称'
+                },
+                {
+                    field: 'typeId',
+                    title: '商品类型',
+                    formatter: function (value, row, index) {
+                        var typeName = "";
+                        for (var i in typeDatas) {
+                            if (row.typeId == typeDatas[i].typeId) {
+                                typeName = typeDatas[i].typeName;
+                                return typeName;
+                            }
+                        }
+                    }
+                },
+                {
+                    field: 'materialModel',
+                    title: '规格型号'
+                },
+                {
+                    field: 'remark',
+                    title: '备注'
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间'
+                },
+                {
+                    field: 'unit',
+                    title: '计量单位',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(unitDatas, value);
+                    }
+                },
+                {
+                    field: 'stock',
+                    title: '仓库',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(stockDatas, value);
+                    }
+                }]
+        };
+        $.table.init(options);
+        initTree();
+    });
+
+    function initTree() {
+        var url = ctx + "cpwz/type/typeTreeData";
+        var options = {
+            url: url,
+            expandLevel: 1,
+            onDblClick: zOnDbClick
+        };
+        $.tree.init(options);
+
+    };
+
+    function zOnDbClick(event, treeId, treeNode) {
+        $("#typeId").val(treeNode.id);
+        //根据typeid加载对应表格数据
+        $.table.search()
+    }
+
+
+</script>
+</body>
+</html>

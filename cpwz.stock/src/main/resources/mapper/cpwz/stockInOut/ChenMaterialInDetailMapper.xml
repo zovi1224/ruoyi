@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.stockInOut.mapper.ChenMaterialInDetailMapper">
+
+    <resultMap type="ChenMaterialInDetail" id="ChenMaterialInDetailResult">
+        <result property="inDetailId" column="in_detail_id"/>
+        <result property="materialId" column="material_id"/>
+        <result property="materialName" column="material_name"/>
+        <result property="inMainCode" column="in_main_code"/>
+        <result property="stockId" column="stock_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="inNum" column="in_num"/>
+        <result property="price" column="price"/>
+        <result property="totalPrice" column="total_price"/>
+        <result property="taxPrice" column="tax_price"/>
+        <result property="carriage" column="carriage"/>
+        <result property="unit" column="unit"/>
+        <result property="lowPrice" column="low_price"/>
+    </resultMap>
+
+    <sql id="selectChenMaterialInDetailVo">
+        select d.in_detail_id, d.material_id, d.in_main_code, d.low_price,d.stock_id, d.create_time, d.in_num,
+        d.price, d.total_price, d.tax_price, d.carriage, i.unit,i.material_name from chen_material_in_detail d left join chen_material_info i on d.material_id = i.material_id
+    </sql>
+
+    <select id="selectChenMaterialInDetailList" parameterType="ChenMaterialInDetail"
+            resultMap="ChenMaterialInDetailResult">
+        <include refid="selectChenMaterialInDetailVo"/>
+        <where>
+            <if test="materialId != null ">and material_id = #{materialId}</if>
+            <if test="inMainCode != null  and inMainCode != ''">and in_main_code = #{inMainCode}</if>
+            <if test="stockId != null ">and stock_id = #{stockId}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+            <if test="inNum != null ">and in_num = #{inNum}</if>
+            <if test="price != null ">and price = #{price}</if>
+            <if test="totalPrice != null ">and total_price = #{totalPrice}</if>
+            <if test="taxPrice != null ">and tax_price = #{taxPrice}</if>
+            <if test="carriage != null ">and carriage = #{carriage}</if>
+            <if test="unit != null  and unit != ''">and unit = #{unit}</if>
+        </where>
+    </select>
+
+    <select id="selectChenMaterialInDetailById" parameterType="Long" resultMap="ChenMaterialInDetailResult">
+        <include refid="selectChenMaterialInDetailVo"/>
+        where in_detail_id = #{inDetailId}
+    </select>
+    <select id="selectChenMaterialInDetailByInMainCode" parameterType="String" resultType="Integer">
+        select count(t.in_detail_id) from chen_material_in_detail t
+        where in_main_code = #{inMainCode}
+    </select>
+
+    <insert id="insertChenMaterialInDetail" parameterType="ChenMaterialInDetail" useGeneratedKeys="true"
+            keyProperty="inDetailId">
+        insert into chen_material_in_detail
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialId != null ">material_id,</if>
+            <if test="inMainCode != null  and inMainCode != ''">in_main_code,</if>
+            <if test="stockId != null ">stock_id,</if>
+            <if test="createTime != null ">create_time,</if>
+            <if test="inNum != null ">in_num,</if>
+            <if test="price != null ">price,</if>
+            <if test="totalPrice != null ">total_price,</if>
+            <if test="taxPrice != null ">tax_price,</if>
+            <if test="lowPrice != null ">low_price,</if>
+            <if test="carriage != null ">carriage,</if>
+            <if test="unit != null  and unit != ''">unit,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="materialId != null ">#{materialId},</if>
+            <if test="inMainCode != null  and inMainCode != ''">#{inMainCode},</if>
+            <if test="stockId != null ">#{stockId},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="inNum != null ">#{inNum},</if>
+            <if test="price != null ">#{price},</if>
+            <if test="totalPrice != null ">#{totalPrice},</if>
+            <if test="taxPrice != null ">#{taxPrice},</if>
+            <if test="carriage != null ">#{carriage},</if>
+            <if test="unit != null  and unit != ''">#{unit},</if>
+            <if test="lowPrice != null ">#{lowPrice},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChenMaterialInDetail" parameterType="ChenMaterialInDetail">
+        update chen_material_in_detail
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="materialId != null ">material_id = #{materialId},</if>
+            <if test="inMainCode != null  and inMainCode != ''">in_main_code = #{inMainCode},</if>
+            <if test="stockId != null ">stock_id = #{stockId},</if>
+            <if test="createTime != null ">create_time = #{createTime},</if>
+            <if test="inNum != null ">in_num = #{inNum},</if>
+            <if test="price != null ">price = #{price},</if>
+            <if test="totalPrice != null ">total_price = #{totalPrice},</if>
+            <if test="lowPrice != null ">low_price = #{lowPrice},</if>
+            <if test="taxPrice != null ">tax_price = #{taxPrice},</if>
+            <if test="carriage != null ">carriage = #{carriage},</if>
+        </trim>
+        where in_detail_id = #{inDetailId}
+    </update>
+
+    <update id="updateCarriageByInMainCode">
+        update chen_material_in_detail
+        <trim prefix="SET">
+            <if test="carriage != null ">carriage = #{carriage}</if>
+        </trim>
+        where in_main_code = #{inMainCode}
+    </update>
+
+    <delete id="deleteChenMaterialInDetailById" parameterType="Long">
+        delete from chen_material_in_detail where in_detail_id = #{inDetailId}
+    </delete>
+
+    <delete id="deleteChenMaterialInDetailByIds" parameterType="String">
+        delete from chen_material_in_detail where in_detail_id in
+        <foreach item="inDetailId" collection="array" open="(" separator="," close=")">
+            #{inDetailId}
+        </foreach>
+    </delete>
+
+</mapper>

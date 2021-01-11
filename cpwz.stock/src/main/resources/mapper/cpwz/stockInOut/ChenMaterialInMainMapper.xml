@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.stockInOut.mapper.ChenMaterialInMainMapper">
+    
+    <resultMap type="ChenMaterialInMain" id="ChenMaterialInMainResult">
+        <result property="inMainId"    column="in_main_id"    />
+        <result property="inMainCode"    column="in_main_code"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="carriage"    column="carriage"    />
+        <result property="taxRate"    column="tax_rate"    />
+        <result property="taxPrice"    column="tax_price"    />
+        <result property="totalPrice"    column="total_price"    />
+    </resultMap>
+
+    <sql id="selectChenMaterialInMainVo">
+        select in_main_id, in_main_code, create_time, carriage, tax_rate, tax_price, total_price from chen_material_in_main
+    </sql>
+
+    <select id="selectChenMaterialInMainList" parameterType="ChenMaterialInMain" resultMap="ChenMaterialInMainResult">
+        <include refid="selectChenMaterialInMainVo"/>
+        <where>
+            <if test="inMainCode != null  and inMainCode != ''"> and in_main_code like concat('%', #{inMainCode},'%')</if>
+            <if test="carriage != null "> and carriage = #{carriage}</if>
+            <if test="taxRate != null  and taxRate != ''"> and tax_rate = #{taxRate}</if>
+            <if test="taxPrice != null "> and tax_price = #{taxPrice}</if>
+            <if test="totalPrice != null "> and total_price = #{totalPrice}</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != ''"><!-- 开始时间检索 -->
+                AND date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginCreateTime},'%y%m%d')
+            </if>
+            <if test="params.endCreateTime != null and params.endCreateTime != ''"><!-- 结束时间检索 -->
+                AND date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endCreateTime},'%y%m%d')
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+    
+    <select id="selectChenMaterialInMainById" parameterType="Long" resultMap="ChenMaterialInMainResult">
+        <include refid="selectChenMaterialInMainVo"/>
+        where in_main_id = #{inMainId}
+    </select>
+        
+    <insert id="insertChenMaterialInMain" parameterType="ChenMaterialInMain" useGeneratedKeys="true" keyProperty="inMainId">
+        insert into chen_material_in_main
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="inMainCode != null  and inMainCode != ''">in_main_code,</if>
+            <if test="createTime != null ">create_time,</if>
+            <if test="carriage != null ">carriage,</if>
+            <if test="taxRate != null  and taxRate != ''">tax_rate,</if>
+            <if test="taxPrice != null ">tax_price,</if>
+            <if test="totalPrice != null ">total_price,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="inMainCode != null  and inMainCode != ''">#{inMainCode},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="carriage != null ">#{carriage},</if>
+            <if test="taxRate != null  and taxRate != ''">#{taxRate},</if>
+            <if test="taxPrice != null ">#{taxPrice},</if>
+            <if test="totalPrice != null ">#{totalPrice},</if>
+         </trim>
+    </insert>
+
+    <update id="updateChenMaterialInMain" parameterType="ChenMaterialInMain">
+        update chen_material_in_main
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="inMainCode != null  and inMainCode != ''">in_main_code = #{inMainCode},</if>
+            <if test="createTime != null ">create_time = #{createTime},</if>
+            <if test="carriage != null ">carriage = #{carriage},</if>
+            <if test="taxRate != null  and taxRate != ''">tax_rate = #{taxRate},</if>
+            <if test="taxPrice != null ">tax_price = #{taxPrice},</if>
+            <if test="totalPrice != null ">total_price = #{totalPrice},</if>
+        </trim>
+        where in_main_id = #{inMainId}
+    </update>
+
+    <delete id="deleteChenMaterialInMainById" parameterType="Long">
+        delete from chen_material_in_main where in_main_id = #{inMainId}
+    </delete>
+
+    <delete id="deleteChenMaterialInMainByIds" parameterType="String">
+        delete from chen_material_in_main where in_main_id in 
+        <foreach item="inMainId" collection="array" open="(" separator="," close=")">
+            #{inMainId}
+        </foreach>
+    </delete>
+    
+</mapper>

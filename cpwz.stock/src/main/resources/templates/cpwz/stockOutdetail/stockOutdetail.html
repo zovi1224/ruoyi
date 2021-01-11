@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('出库明细列表')"/>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            <label style="width:85px!important;">出库单编码：</label>
+                            <input type="text" name="outMainCode"/>
+                        </li>
+                        <li class="select-time">
+                            <label>创建时间：</label>
+                            <input type="text" class="time-input" id="startTime" placeholder="开始时间"
+                                   name="params[beginCreateTime]"/>
+                            <span>-</span>
+                            <input type="text" class="time-input" id="endTime" placeholder="结束时间"
+                                   name="params[endCreateTime]"/>
+                        </li>
+                        <li>
+                            <label>客户：</label>
+                            <select name="userId" id="userId">
+                                <option value="">无</option>
+                                <option th:each="SysUser : ${userList}" th:text="${SysUser.userName}"
+                                        th:value="${SysUser.userId}"></option>
+                            </select>
+                        </li>
+                        <li>
+                            <label>是否销账：</label>
+                            <select name="pay" th:with="type=${@dict.getType('is_pay')}">
+                                <option value="">所有</option>
+                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                        th:value="${dict.dictValue}"></option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+<!--        <div class="btn-group-sm" id="toolbar" role="group">-->
+<!--            <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="cpwz:stockOutdetail:export">-->
+<!--                <i class="fa fa-download"></i> 导出-->
+<!--            </a>-->
+<!--        </div>-->
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<script th:inline="javascript">
+    var removeFlag = [[${@permission.hasPermi('cpwz:stockOutdetail:remove')}]];
+    var editFlag = [[${@permission.hasPermi('cpwz:stockOutdetail:edit')}]];
+    var stockIdDatas = [[${@dict.getType('stock_info')}]];
+    var unitDatas = [[${@dict.getType('pcs_unit')}]];
+    var isPay = [[${@dict.getType('is_pay')}]];
+    var prefix = ctx + "cpwz/stockOutdetail";
+
+    //销账按钮
+    function payNow(outMainId) {
+        $.modal.confirm("确定将本入库单销账吗？销账后不可恢复哦！", function () {
+            var url = prefix + "/payNow";
+            var data = {"outMainId": outMainId};
+            $.operate.submit(url, "get", "json", data);
+
+        });
+    }
+
+
+    //打印按钮
+    function print(outMainId) {
+        layer.open({
+            type: 2,
+            area: ['500px','400px'],
+            fix: false,
+            maxmin: true,
+            shade: 0.3,
+            title: "打印出库单",
+            content: prefix + "/print/" + outMainId,
+            // 弹层外区域关闭
+            shadeClose: true,
+            btn: ['打印'],
+            yes: function (index, layero) {
+                var body = layer.getChildFrame('body', index);
+                var iframeWin = window[layero.find('iframe')[0]['name']];
+                bdhtml = iframeWin.document.body.innerHTML;//获取当前页的html代码
+
+                sprnstr = "<!--startprint-->";//设置打印开始区域
+                eprnstr = "<!--endprint-->";//设置打印结束区域
+                prnhtml = bdhtml.substring(bdhtml.indexOf(sprnstr) + 18); //从开始代码向后取html
+
+                prnhtml = prnhtml.substring(0, prnhtml.indexOf(eprnstr));//从结束代码向前取html
+                iframeWin.document.body.innerHTML = prnhtml;
+                iframeWin.print();
+                iframeWin.document.body.innerHTML = bdhtml;
+
+            }
+        });
+
+    }
+
+    function initTable() {
+        var options = {
+            url: prefix + '/list',
+            removeUrl: prefix + "/remove",
+            printUrl: prefix + "/print",
+            method: 'post',
+            showFooter: true,
+            striped: true, //是否显示行间隔色
+            detailView: true,//父子表
+            // pagination: true,//显示分页
+            // sidePagination: "client",
+            modalName: "出库单",
+            // pageNumber: 1,
+            // pageSize: 20,
+            // pageList: [10, 25],
+            columns: [
+                {
+                    field: 'outMainId',
+                    title: 'outMainId',
+                    visible: false
+                }, {
+                    field: 'outMainCode',
+                    title: '出库单编码'
+                }, {
+                    field: 'createTime',
+                    title: '创建时间'
+                }, {
+                    field: 'userName',
+                    title: '用户'
+                }, {
+                    field: 'carriage',
+                    title: '运费',
+                    visible: false
+                }, {
+                    field: 'totalPrice',
+                    title: '总金额',
+                    footerFormatter: function (value) {
+
+                        var sumTotal = 0;
+                        for (var i in value) {
+                            debugger
+                            sumTotal += parseFloat(value[i].totalPrice);
+                        }
+                        return "总金额：" + sumTotal;
+                    }
+                }, {
+                    field: 'totalProfit',
+                    title: '总利润',
+                    visible: false
+                },
+                {
+                    field: 'pay',
+                    title: '是否已销账',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(isPay, value);
+                    }
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+
+                        actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="payNow(\'' + row.outMainId + '\')"><i class="fa fa-edit"></i>销账</a> ');
+                        actions.push('<a class="btn btn-info btn-xs" href="javascript:void(0)" onclick="print(\'' + row.outMainId + '\')"><i class="fa fa-print"></i>打印出库单</a> ');
+                        return actions.join('');
+                    }
+                }],
+            //注册加载子表的事件。注意下这里的三个参数！
+            onExpandRow: function (index, row, $detail) {
+                initSubTable(index, row, $detail);
+            }
+        };
+        $.table.init(options);
+        //初始化子表格(无线循环)
+        initSubTable = function (index, row, $detail) {
+            var parentid = row.outMainCode;
+            var cur_table = $detail.html('<table></table>').find('table');
+            $(cur_table).bootstrapTable({
+                url: prefix + '/outDetailList',
+                method: 'get',
+                queryParams: {id: parentid},
+                ajaxOptions: {id: parentid},
+                uniqueId: "outDetailId",
+                striped: true, //是否显示行间隔色
+                pagination: true,//显示分页
+                sidePagination: "client",
+                pageNumber: 1,
+                pageSize: 15,
+                pageList: [10, 25],
+                columns: [{
+                    field: 'outDetailId',
+                    title: 'outDetailId',
+                    visible: false
+                },
+                    {
+                        field: 'outMainCode',
+                        title: '出库单编码',
+                        visible: false
+                    },
+                    {
+                        field: 'materialId',
+                        title: '商品id',
+                        visible: false
+                    },
+                    {
+                        field: 'materialName',
+                        title: '商品名称'
+                    }, {
+                        field: 'materialModel',
+                        title: '规格型号'
+                    },
+                    {
+                        field: 'createTime',
+                        title: '创建时间'
+                    },
+                    {
+                        field: 'stockId',
+                        title: '仓库',
+                        formatter: function (value, row, index) {
+                            return $.table.selectDictLabel(stockIdDatas, value);
+                        }
+                    },
+                    {
+                        field: 'stockNumber',
+                        title: '库存数量',
+                        visible: false
+                    },
+                    {
+                        field: 'outNum',
+                        title: '出库数量'
+                    },
+                    {
+                        field: 'price',
+                        title: '单价',
+                        formatter: function (value, row, index) {
+                            return Number(value).toFixed(2);
+                        }
+                    },
+                    {
+                        field: 'lowPrice',
+                        title: '最低售价',
+                        visible: false
+                    },
+                    {
+                        field: 'totalPrice',
+                        title: '总价',
+                        formatter: function (value, row, index) {
+                            return Number(value).toFixed(2);
+                        }
+                    },
+                    {
+                        field: 'carriage',
+                        title: '运费',
+                        formatter: function (value, row, index) {
+                            return Number(value).toFixed(2);
+
+                        },
+                        visible: false
+                    },
+                    {
+                        field: 'unit',
+                        title:
+                            '计量单位',
+                        formatter:
+                            function (value, row, index) {
+                                return $.table.selectDictLabel(unitDatas, value);
+                            }
+                    }],
+                //无线循环取子表，直到子表里面没有记录
+                onExpandRow: function (index, row, $Subdetail) {
+                    initSubTable(index, row, $Subdetail);
+                }
+            });
+        };
+    }
+
+    $(function () {
+        initTable();
+    });
+</script>
+</body>
+</html>

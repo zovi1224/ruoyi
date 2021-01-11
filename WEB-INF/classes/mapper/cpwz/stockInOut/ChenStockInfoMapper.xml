@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.stockInOut.mapper.ChenStockInfoMapper">
+
+    <resultMap type="ChenStockInfo" id="ChenStockInfoResult">
+        <result property="infoId" column="info_id"/>
+        <result property="materialId" column="material_id"/>
+        <result property="materialName" column="material_name"/>
+        <result property="materialModel" column="material_model"/>
+        <result property="stockId" column="stock_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="stockNumber" column="stock_number"/>
+        <result property="avgPrice" column="avg_price"/>
+        <result property="totalPrice" column="total_price"/>
+        <result property="lowPrice" column="low_price"/>
+        <result property="carriage" column="carriage"/>
+        <result property="unit" column="unit"/>
+        <result property="typeName" column="type_name"/>
+        <result property="typeId" column="type_id"/>
+    </resultMap>
+
+    <sql id="selectChenStockInfoVo">
+        select info.info_id, info.material_id, info.stock_id, info.create_time, info.stock_number, info.avg_price,
+        info.total_price, info.low_price,m.material_name,m.unit,m.material_model,type.type_id,type.type_name
+        from chen_stock_info info left join chen_material_info m on info.material_id = m.material_id left join
+        chen_material_type type on m.type_id = type.type_id
+    </sql>
+
+    <select id="selectChenStockInfoList" resultMap="ChenStockInfoResult">
+        <include refid="selectChenStockInfoVo"/>
+        <where>
+            <if test="chenStockInfo.materialName != null  and chenStockInfo.materialName != ''">and material_name like
+                concat('%', #{materialName},
+                '%')
+            </if>
+            <if test="chenStockInfo.materialModel != null  and chenStockInfo.materialModel != ''">and material_model
+                like concat('%',
+                #{materialModel},
+                '%')
+            </if>
+            <if test="chenStockInfo.typeId != null ">and type.type_id = #{chenStockInfo.typeId}</if>
+            <if test="chenStockInfo.stockId != null ">and info.stock_id = #{chenStockInfo.stockId}</if>
+            <if test="chenStockInfo.createTime != null ">and info.create_time = #{chenStockInfo.createTime}</if>
+            <if test="chenStockInfo.stockNumber != null ">and info.stock_number = #{chenStockInfo.stockNumber}</if>
+            <if test="chenStockInfo.avgPrice != null ">and info.avg_price = #{chenStockInfo.avgPrice}</if>
+            <if test="chenStockInfo.totalPrice != null ">and info.total_price = #{chenStockInfo.totalPrice}</if>
+            <if test="chenStockInfo.lowPrice != null ">and info.low_price = #{chenStockInfo.lowPrice}</if>
+            <if test="infoIds != null and infoIds != ''">and info.info_id not in
+                <foreach item="infoId" collection="infoIds" open="(" separator="," close=")">
+                    #{infoId}
+                </foreach>
+            </if>
+
+        </where>
+    </select>
+
+    <select id="selectChenStockInfoById" parameterType="Long" resultMap="ChenStockInfoResult">
+        <include refid="selectChenStockInfoVo"/>
+        where info.info_id = #{infoId}
+    </select>
+
+    <insert id="insertChenStockInfo" parameterType="ChenStockInfo" useGeneratedKeys="true" keyProperty="infoId">
+        insert into chen_stock_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialId != null ">material_id,</if>
+            <if test="stockId != null ">stock_id,</if>
+            <if test="createTime != null ">create_time,</if>
+            <if test="stockNumber != null ">stock_number,</if>
+            <if test="avgPrice != null ">avg_price,</if>
+            <if test="totalPrice != null ">total_price,</if>
+            <if test="lowPrice != null ">low_price,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="materialId != null ">#{materialId},</if>
+            <if test="stockId != null ">#{stockId},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="stockNumber != null ">#{stockNumber},</if>
+            <if test="avgPrice != null ">#{avgPrice},</if>
+            <if test="totalPrice != null ">#{totalPrice},</if>
+            <if test="lowPrice != null ">#{lowPrice},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChenStockInfo" parameterType="ChenStockInfo">
+        update chen_stock_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="materialId != null ">material_id = #{materialId},</if>
+            <if test="stockId != null ">stock_id = #{stockId},</if>
+            <if test="createTime != null ">create_time = #{createTime},</if>
+            <if test="stockNumber != null ">stock_number = #{stockNumber},</if>
+            <if test="avgPrice != null ">avg_price = #{avgPrice},</if>
+            <if test="totalPrice != null ">total_price = #{totalPrice},</if>
+            <if test="lowPrice != null ">low_price = #{lowPrice},</if>
+        </trim>
+        where info_id = #{infoId}
+    </update>
+
+    <delete id="deleteChenStockInfoById" parameterType="Long">
+        delete from chen_stock_info where info_id = #{infoId}
+    </delete>
+
+    <delete id="deleteChenStockInfoByIds" parameterType="String">
+        delete from chen_stock_info where info_id in
+        <foreach item="infoId" collection="array" open="(" separator="," close=")">
+            #{infoId}
+        </foreach>
+    </delete>
+
+</mapper>

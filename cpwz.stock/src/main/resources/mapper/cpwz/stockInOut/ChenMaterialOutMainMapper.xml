@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.stockInOut.mapper.ChenMaterialOutMainMapper">
+    
+    <resultMap type="ChenMaterialOutMain" id="ChenMaterialOutMainResult">
+        <result property="outMainId"    column="out_main_id"    />
+        <result property="outMainCode"    column="out_main_code"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="carriage"    column="carriage"    />
+        <result property="totalPrice"    column="total_price"    />
+        <result property="totalProfit"    column="total_profit"    />
+        <result property="userId"    column="user_id"    />
+        <result property="userName"    column="user_name"    />
+        <result property="pay"    column="pay"    />
+    </resultMap>
+
+    <sql id="selectChenMaterialOutMainVo">
+        select main.out_main_id, main.out_main_code, main.create_time, main.carriage, main.total_price,
+        main.total_profit,main.user_id,Suser.user_name,main.pay from chen_material_out_main main left join sys_user Suser
+        on main.user_id = Suser.user_id
+    </sql>
+
+    <select id="selectChenMaterialOutMainList" parameterType="ChenMaterialOutMain" resultMap="ChenMaterialOutMainResult">
+        <include refid="selectChenMaterialOutMainVo"/>
+        <where>  
+            <if test="outMainCode != null  and outMainCode != ''"> and main.out_main_code like concat('%', #{outMainCode},'%')</if>
+            <if test="carriage != null "> and main.carriage = #{carriage}</if>
+            <if test="totalPrice != null "> and main.total_price = #{totalPrice}</if>
+            <if test="totalProfit != null "> and main.total_profit = #{totalProfit}</if>
+            <if test="userId != null "> and main.user_id = #{userId}</if>
+            <if test="pay != null and pay != ''"> and main.pay = #{pay}</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != ''"><!-- 开始时间检索 -->
+                AND date_format(main.create_time,'%y%m%d') &gt;= date_format(#{params.beginCreateTime},'%y%m%d')
+            </if>
+            <if test="params.endCreateTime != null and params.endCreateTime != ''"><!-- 结束时间检索 -->
+                AND date_format(main.create_time,'%y%m%d') &lt;= date_format(#{params.endCreateTime},'%y%m%d')
+            </if>
+        </where>
+        order by main.create_time desc
+    </select>
+    
+    <select id="selectChenMaterialOutMainById" parameterType="Long" resultMap="ChenMaterialOutMainResult">
+        <include refid="selectChenMaterialOutMainVo"/>
+        where out_main_id = #{outMainId}
+    </select>
+        
+    <insert id="insertChenMaterialOutMain" parameterType="ChenMaterialOutMain" useGeneratedKeys="true" keyProperty="outMainId">
+        insert into chen_material_out_main
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="outMainCode != null  and outMainCode != ''">out_main_code,</if>
+            <if test="createTime != null ">create_time,</if>
+            <if test="carriage != null ">carriage,</if>
+            <if test="totalPrice != null ">total_price,</if>
+            <if test="totalProfit != null ">total_profit,</if>
+            <if test="userId != null ">user_id,</if>
+            <if test="pay != null ">pay,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="outMainCode != null  and outMainCode != ''">#{outMainCode},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="carriage != null ">#{carriage},</if>
+            <if test="totalPrice != null ">#{totalPrice},</if>
+            <if test="totalProfit != null ">#{totalProfit},</if>
+            <if test="userId != null ">#{userId},</if>
+            <if test="pay != null ">#{pay},</if>
+
+         </trim>
+    </insert>
+
+    <update id="updateChenMaterialOutMain" parameterType="ChenMaterialOutMain">
+        update chen_material_out_main
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="outMainCode != null  and outMainCode != ''">out_main_code = #{outMainCode},</if>
+            <if test="createTime != null ">create_time = #{createTime},</if>
+            <if test="carriage != null ">carriage = #{carriage},</if>
+            <if test="totalPrice != null ">total_price = #{totalPrice},</if>
+            <if test="totalProfit != null ">total_profit = #{totalProfit},</if>
+            <if test="userId != null ">user_id = #{userId},</if>
+            <if test="pay != null ">pay = #{pay},</if>
+        </trim>
+        where out_main_id = #{outMainId}
+    </update>
+
+    <delete id="deleteChenMaterialOutMainById" parameterType="Long">
+        delete from chen_material_out_main where out_main_id = #{outMainId}
+    </delete>
+
+    <delete id="deleteChenMaterialOutMainByIds" parameterType="String">
+        delete from chen_material_out_main where out_main_id in 
+        <foreach item="outMainId" collection="array" open="(" separator="," close=")">
+            #{outMainId}
+        </foreach>
+    </delete>
+    
+</mapper>

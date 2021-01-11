@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.baseInfo.mapper.ChenMaterialTypeMapper">
+    
+    <resultMap type="ChenMaterialType" id="ChenMaterialTypeResult">
+        <result property="typeId"    column="type_id"    />
+        <result property="parentId"    column="parent_id"    />
+        <result property="parentName"     column="parent_name"    />
+        <result property="typeName"    column="type_name"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+    </resultMap>
+
+    <select id="selectTypeAll" resultMap="ChenMaterialTypeResult">
+        <include refid="selectChenMaterialTypeVo"/>
+        order by parent_id
+    </select>
+    <sql id="selectChenMaterialTypeVo">
+        select type_id, parent_id, type_name, remark, status from chen_material_type
+    </sql>
+
+    <select id="selectChenMaterialTypeList" parameterType="ChenMaterialType" resultMap="ChenMaterialTypeResult">
+        <include refid="selectChenMaterialTypeVo"/>
+        <where>  
+            <if test="parentId != null "> and parent_id = #{parentId}</if>
+            <if test="typeName != null  and typeName != ''"> and type_name like concat('%', #{typeName}, '%')</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    
+    <select id="selectChenMaterialTypeById" parameterType="Long" resultMap="ChenMaterialTypeResult">
+        select t.parent_id,t.remark,t.status,t.type_id,t.type_name,
+        (SELECT type_name FROM chen_material_type WHERE type_id = t.parent_id) parent_name
+         from chen_material_type t
+        where t.type_id = #{typeId}
+    </select>
+        
+    <insert id="insertChenMaterialType" parameterType="ChenMaterialType" useGeneratedKeys="true" keyProperty="typeId">
+        insert into chen_material_type
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="parentId != null ">parent_id,</if>
+            <if test="typeName != null  and typeName != ''">type_name,</if>
+            <if test="remark != null  and remark != ''">remark,</if>
+            <if test="status != null  and status != ''">status,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="parentId != null ">#{parentId},</if>
+            <if test="typeName != null  and typeName != ''">#{typeName},</if>
+            <if test="remark != null  and remark != ''">#{remark},</if>
+            <if test="status != null  and status != ''">#{status},</if>
+         </trim>
+    </insert>
+
+    <update id="updateChenMaterialType" parameterType="ChenMaterialType">
+        update chen_material_type
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="parentId != null ">parent_id = #{parentId},</if>
+            <if test="typeName != null  and typeName != ''">type_name = #{typeName},</if>
+            <if test="remark != null  and remark != ''">remark = #{remark},</if>
+            <if test="status != null  and status != ''">status = #{status},</if>
+        </trim>
+        where type_id = #{typeId}
+    </update>
+
+    <delete id="deleteChenMaterialTypeById" parameterType="Long">
+        delete from chen_material_type where type_id = #{typeId}
+    </delete>
+
+    <delete id="deleteChenMaterialTypeByIds" parameterType="String">
+        delete from chen_material_type where type_id in 
+        <foreach item="typeId" collection="array" open="(" separator="," close=")">
+            #{typeId}
+        </foreach>
+    </delete>
+
+    <select id="checkTypeNameUnique" parameterType="ChenMaterialType" resultMap="ChenMaterialTypeResult">
+        <include refid="selectChenMaterialTypeVo"/>
+        where type_name=#{typeName} and parent_id = #{parentId}
+    </select>
+    
+</mapper>

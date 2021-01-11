@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('入库信息列表')"/>
+    <script th:src="@{/ruoyi/js/DateFormat.js?v=4.2.0}"></script>
+    <th:block th:include="include :: bootstrap-editable-css"/>
+</head>
+<style>
+    label {
+        width: 100px !important;
+    }
+
+    input[readonly] {
+        background-color: #eee;
+        opacity: 1;
+    }
+</style>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="myForm">
+                <div class="select-list">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <ul>
+                                <li>
+                                    <label>入库单编码：</label>
+                                    <input class="form-control input-lg" type="text" name="inMainCode" readonly
+                                           th:value="${stockInCode}" id="inMainCode"/>
+                                </li>
+                                <li>
+                                    <label>创建时间：</label>
+                                    <input type="text" id="createTime" class="form-control input-lg"
+                                           readonly/>
+                                </li>
+
+                                <li>
+                                    <label>本单合计(含税)：</label>
+                                    <input type="text" id="mainTotal" name="totalPrice"
+                                           class="form-control input-lg" readonly/>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <ul>
+                                <li>
+                                    <label>税率：</label>
+                                    <select name="taxRate" id="taxRate" th:with="type=${@dict.getType('taxRate')}">
+                                        <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                                th:value="${dict.dictValue}"></option>
+                                    </select>
+                                </li>
+                                <li>
+                                    <label>税费：</label>
+                                    <input type="text" name="taxPrice" id="taxPrice" readonly/>
+                                </li>
+                                <li>
+                                    <label>运费：</label>
+                                    <input type="text" name="carriage" id="carriage" value="0"/>
+                                </li>
+                                <li>
+                                    <a class="btn btn-primary btn-rounded btn-sm" onclick="saveInMain()"><i
+                                            class="fa fa-search"></i>&nbsp;立即入库</a>
+
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="add()" shiro:hasPermission="cpwz:stockInMain:add">
+                <i class="fa fa-plus"></i> 添加
+            </a>
+            <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()"
+               shiro:hasPermission="cpwz:stockInMain:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: bootstrap-table-editable-js"/>
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('cpwz:stockInDetail:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('cpwz:stockInDetail:remove')}]];
+    var prefix = ctx + "cpwz/stockInMain";
+    var stockIdDatas = [[${@dict.getType('stock_info')}]];
+    var unitDatas = [[${@dict.getType('pcs_unit')}]];
+    $("#myForm").validate({
+        focusCleanup: true
+    });
+
+    //立即入库
+    function saveInMain() {
+
+        //保存明细表并计算库存
+        var tableData = $("#" + table.options.id).bootstrapTable('getData');
+        //验证表格是否填写了单价和数量
+        for (var i in tableData) {
+            var price = tableData[i].price;
+            var innum = tableData[i].inNum;
+            if (price == 0 || innum == 0) {
+                $.modal.alertError("请填写单价和入库数量！");
+                return;
+            }
+        }
+        if (tableData.length <= 0) {
+            $.modal.alertError("没有添加入库信息不能入库！");
+            return;
+        } else {
+            var saveToStockInfo = true;
+
+            var inMainData = $.common.formToJSON("myForm");
+            if ($.validate.form()) {
+                saveTableAndCalculateTaxAndToalPrice(tableData, saveToStockInfo, JSON.stringify(inMainData));
+            }
+        }
+
+    }
+
+    //添加商品明细
+    function add() {
+        //拿到当前已添加的商品id
+        var tableData = $("#" + table.options.id).bootstrapTable('getData');
+        var ids = [];
+        if (tableData.length === 0) {
+            ids.push("null")
+        } else {
+            for (var i in tableData) {
+                ids.push(tableData[i].materialId);
+            }
+        }
+        $.modal.openFull("添加入库明细", prefix + "/add/" + ids);
+    }
+
+    //运费改变时重新计算表格内的运费
+    $("#carriage").change(function () {
+        //获取表格的行数，若不为0就进行更新
+        var tableData = $("#" + table.options.id).bootstrapTable('getData');
+        var data = {inMainCode: [[${stockInCode}]], carriage: $("#carriage").val()};
+        if (tableData.length <= 0) {
+            return;
+        } else {
+            $.get(prefix + '/updateCarriage', data, function () {
+                $.table.refresh();
+            });
+        }
+    });
+    //税率改变时重新计算单子里面的税费以及总的税费
+    $("#taxRate").change(function () {
+        var tableData = $("#" + table.options.id).bootstrapTable('getData');
+        if (tableData.length <= 0) {
+            return;
+        } else {
+            saveTableAndCalculateTaxAndToalPrice(tableData, false);
+        }
+    });
+
+    //更新本单总税价和本单合计
+    function updateTotalPriceAndTaxPrice(caculate) {
+        //本单总税价
+        $("#taxPrice").val(caculate.taxPrice);
+        //本单合计（总价加税）
+        $("#mainTotal").val(caculate.totalPrice);
+    }
+
+    //保存表格信息已经计算税费和本单合计及每条运费
+    function saveTableAndCalculateTaxAndToalPrice(tableData, saveToStockInfo, inMainData) {
+        var select = $("#taxRate option:selected").val();
+        // var tableData = $("#" + table.options.id).bootstrapTable('getRowByUniqueId',row.inDetailId);
+        var carriage = $("#carriage").val();
+        var data = {
+            "taxRate": select,
+            "tableData": JSON.stringify(tableData),
+            "carriage": carriage,
+            "saveToStockInfo": saveToStockInfo
+        };
+        //如果是立即入库加上主单数据一起传
+        if (saveToStockInfo) {
+            data.inMainData = inMainData;
+        }
+        debugger;
+        var url = prefix + "/editDetail";
+        var config = {
+            url: url,
+            type: "post",
+            dataType: "json",
+            data: data,
+            beforeSend: function () {
+                $.modal.loading("正在处理中，请稍后...");
+                $.modal.disable();
+            },
+            success: function (result) {
+                if (typeof callback == "function") {
+                    callback(result);
+                }
+                $.modal.close();
+
+                $.modal.closeLoading();
+                // $.modal.disable();
+                //刷新表格
+                $.table.refresh();
+                updateTotalPriceAndTaxPrice(result.calculate);
+                if (saveToStockInfo) {
+                    $.modal.msgSuccess(result.ajaxResult.msg);
+                    //将form设为禁用
+                    $('#myForm').find('input,textarea').attr('readonly', true);
+                    $("#taxRate").attr("disabled", true);
+                    $("a[class*=btn]").addClass("layer-disabled");
+                    //所有点击失效
+                    document.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }, true);
+
+                }
+            }
+        };
+        $.ajax(config);
+    }
+
+    $(function () {
+        //系统时间填入创建时间
+        $("#createTime").val(new Date().Format("yyyy-MM-dd HH:mm:ss"));
+        // var mainTotal = 0;
+        var options = {
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            modalName: "入库明细",
+            uniqueId: "inDetailId",
+            onEditableSave: onEditableSave,
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'inDetailId',
+                    title: 'inDetailId',
+                    visible: false
+
+                },
+                {
+                    field: 'inMainCode',
+                    title: '入库单编码',
+                    visible: false
+                },
+                {
+                    field: 'materialId',
+
+                    title: '商品id',
+                    visible: false
+                },
+                {
+                    field: 'materialName',
+                    title: '商品名称'
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间'
+                },
+                {
+                    field: 'stockId',
+                    title: '仓库',
+                    editable: {
+                        type: 'select',
+                        title: '仓库',
+                        emptytext: "--",
+                        source: function () {
+                            var result = [];
+                            $.each(stockIdDatas, function(index, dict) {
+                                result.push({ value: dict.dictValue, text: dict.dictLabel });
+                            });
+                            return result;
+                        },validate: function (v) {
+                            if (!v) return '设备类型不能为空';
+
+                        }
+                    }
+                },
+                {
+                    field: 'inNum',
+                    title: '入库数量',
+                    editable: {
+                        type: 'text',
+                        title: '入库数量',
+                        emptytext: 0,
+                        validate: function (v) {
+                            if (isNaN(v)) return '入库数量必须是数字';
+                            var inNum = parseInt(v);
+                            if (inNum <= 0) return '入库数量必须是正整数';
+                        }
+                    }
+                },
+                {
+                    field: 'price',
+                    title: '单价(不含税)',
+                    editable: {
+                        type: 'text',
+                        title: '单价(不含税)',
+                        emptytext: 0,
+                        validate: function (v) {
+                            if (isNaN(v)) return '单价必须是数字';
+                            var price = parseInt(v);
+                            if (price <= 0) return '单价必须是正整数';
+                        }
+                    }
+                },
+                {
+                    field: 'totalPrice',
+                    title: '总价(不含税)',
+                    formatter: function (value, row, index) {
+
+                        return Number(value).toFixed(2);
+                    }
+                },
+                {
+                    field: 'lowPrice',
+                    title: '最低售价',
+                    editable: {
+                        type: 'text',
+                        title: '最低售价',
+                        emptytext: 0,
+                        validate: function
+                            (v) {
+                            if (isNaN(v)) return '必须是数字';
+                            var price = parseInt(v);
+                            if (price <= 0) return '必须是正整数';
+                        }
+                    }
+                },
+                {
+                    field: 'taxPrice',
+                    title: '税费',
+                    formatter: function (value, row, index) {
+                        return Number(value).toFixed(2);
+
+                    }
+                }
+                ,
+                {
+                    field: 'carriage',
+                    title: '运费',
+                    formatter: function (value, row, index) {
+                        return Number(value).toFixed(2);
+
+                    }
+                }
+                ,
+                {
+                    field: 'unit',
+                    title:
+                        '计量单位',
+                    formatter:
+                        function (value, row, index) {
+                            return $.table.selectDictLabel(unitDatas, value);
+                        }
+                }
+                ,
+                {
+                    title: '操作',
+                    align:
+                        'center',
+                    formatter:
+
+                        function (value, row, index) {
+                            var actions = [];
+                            // actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.edit(\'' + row.inDetailId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                            actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.inDetailId + '\')"><i class="fa fa-remove"></i>删除</a>');
+                            return actions.join('');
+                        }
+                }
+            ]
+        };
+        $.table.init(options);
+
+        //行内编辑保存
+        function onEditableSave(field, row, oldValue, $el) {
+            var index = $el[0].parentNode.parentNode.getAttribute('data-index');
+            // $table.bootstrapTable('updateRow', {index: index, row: row}).
+            // $("#" + table.options.id).bootstrapTable('updateCell', {index: index, field: 'totalPrice', value: ''});
+            $("#" + table.options.id).bootstrapTable('updateRow', {index: index, row: row});
+            var tableData = new Array();
+            tableData.push(row);
+
+            saveTableAndCalculateTaxAndToalPrice(tableData, false);
+        }
+    })
+    ;
+</script>
+</body>
+</html>

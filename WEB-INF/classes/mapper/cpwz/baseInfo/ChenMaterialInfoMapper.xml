@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cpwz.baseInfo.mapper.ChenMaterialInfoMapper">
+
+    <resultMap type="ChenMaterialInfo" id="ChenMaterialInfoResult">
+        <result property="materialId" column="material_id"/>
+        <result property="materialCode" column="material_code"/>
+        <result property="materialName" column="material_name"/>
+        <result property="typeId" column="type_id"/>
+        <result property="typeName" column="type_name"/>
+        <result property="materialModel" column="material_model"/>
+        <result property="remark" column="remark"/>
+        <result property="creatTime" column="creat_time"/>
+        <result property="unit" column="unit"/>
+    </resultMap>
+
+    <sql id="selectChenMaterialInfoVo">
+        select material_id, material_code, material_name, type_id, material_model, remark, creat_time, unit from chen_material_info
+    </sql>
+
+    <select id="selectChenMaterialInfoList" parameterType="ChenMaterialInfo" resultMap="ChenMaterialInfoResult">
+        <include refid="selectChenMaterialInfoVo"/>
+        <where>
+            <if test="materialCode != null  and materialCode != ''">and material_code = #{materialCode}</if>
+            <if test="materialName != null  and materialName != ''">and material_name like concat('%', #{materialName},
+                '%')
+            </if>
+            <if test="typeId != null ">and type_id = #{typeId}</if>
+            <if test="materialModel != null  and materialModel != ''">and material_model = #{materialModel}</if>
+            <if test="creatTime != null ">and creat_time = #{creatTime}</if>
+            <if test="unit != null  and unit != ''">and unit = #{unit}</if>
+        </where>
+    </select>
+
+    <select id="selectChenMaterialInfoById" parameterType="Long" resultMap="ChenMaterialInfoResult">
+        select t.material_id, t.material_code, t.material_name, t.type_id, t.material_model, t.remark,
+         t.creat_time, t.unit,(select type_name from chen_material_type where type_id = t.type_id)type_name from
+        chen_material_info t
+        where material_id = #{materialId}
+    </select>
+
+    <insert id="insertChenMaterialInfo" parameterType="ChenMaterialInfo" useGeneratedKeys="true"
+            keyProperty="materialId">
+        insert into chen_material_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialCode != null  and materialCode != ''">material_code,</if>
+            <if test="materialName != null  and materialName != ''">material_name,</if>
+            <if test="typeId != null ">type_id,</if>
+            <if test="materialModel != null  and materialModel != ''">material_model,</if>
+            <if test="remark != null  and remark != ''">remark,</if>
+            <if test="creatTime != null ">creat_time,</if>
+            <if test="unit != null  and unit != ''">unit,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="materialCode != null  and materialCode != ''">#{materialCode},</if>
+            <if test="materialName != null  and materialName != ''">#{materialName},</if>
+            <if test="typeId != null ">#{typeId},</if>
+            <if test="materialModel != null  and materialModel != ''">#{materialModel},</if>
+            <if test="remark != null  and remark != ''">#{remark},</if>
+            <if test="creatTime != null ">#{creatTime},</if>
+            <if test="unit != null  and unit != ''">#{unit},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChenMaterialInfo" parameterType="ChenMaterialInfo">
+        update chen_material_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="materialCode != null  and materialCode != ''">material_code = #{materialCode},</if>
+            <if test="materialName != null  and materialName != ''">material_name = #{materialName},</if>
+            <if test="typeId != null ">type_id = #{typeId},</if>
+            <if test="materialModel != null  and materialModel != ''">material_model = #{materialModel},</if>
+            <if test="remark != null  and remark != ''">remark = #{remark},</if>
+            <if test="creatTime != null ">creat_time = #{creatTime},</if>
+            <if test="unit != null  and unit != ''">unit = #{unit},</if>
+        </trim>
+        where material_id = #{materialId}
+    </update>
+
+    <delete id="deleteChenMaterialInfoById" parameterType="Long">
+        delete from chen_material_info where material_id = #{materialId}
+    </delete>
+
+    <delete id="deleteChenMaterialInfoByIds" parameterType="String">
+        delete from chen_material_info where material_id in
+        <foreach item="materialId" collection="array" open="(" separator="," close=")">
+            #{materialId}
+        </foreach>
+    </delete>
+    <select id="selectChenMaterialInfoByIds" resultMap="ChenMaterialInfoResult">
+        <include refid="selectChenMaterialInfoVo"/>
+        <where>
+            <if test="chenMaterialInfo.materialCode != null  and chenMaterialInfo.materialCode != ''">and material_code = #{chenMaterialInfo.materialCode}</if>
+            <if test="chenMaterialInfo.materialName != null  and chenMaterialInfo.materialName != ''">and material_name like concat('%', #{chenMaterialInfo.materialName},
+                '%')
+            </if>
+            <if test="chenMaterialInfo.typeId != null ">and type_id = #{chenMaterialInfo.typeId}</if>
+            <if test="chenMaterialInfo.materialModel != null  and chenMaterialInfo.materialModel != ''">and material_model = #{chenMaterialInfo.materialModel}</if>
+            <if test="chenMaterialInfo.creatTime != null ">and creat_time = #{chenMaterialInfo.creatTime}</if>
+            <if test="chenMaterialInfo.unit != null  and chenMaterialInfo.unit != ''">and unit = #{chenMaterialInfo.unit}</if>
+            and material_id not in
+            <foreach item="materialId" collection="materialIds" open="(" separator="," close=")">
+                #{materialId}
+            </foreach>
+        </where>
+    </select>
+</mapper>
