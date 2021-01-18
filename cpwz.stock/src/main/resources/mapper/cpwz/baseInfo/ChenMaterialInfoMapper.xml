@@ -44,7 +44,7 @@
 
     <insert id="insertChenMaterialInfo" parameterType="ChenMaterialInfo" useGeneratedKeys="true"
             keyProperty="materialId">
-        insert into chen_material_info
+        insert ignore into chen_material_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="materialCode != null  and materialCode != ''">material_code,</if>
             <if test="materialName != null  and materialName != ''">material_name,</if>

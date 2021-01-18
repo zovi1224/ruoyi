@@ -41,6 +41,7 @@
                 '%')
             </if>
             <if test="chenStockInfo.typeId != null ">and type.type_id = #{chenStockInfo.typeId}</if>
+            <if test="chenStockInfo.materialId != null ">and info.material_id = #{chenStockInfo.materialId}</if>
             <if test="chenStockInfo.stockId != null ">and info.stock_id = #{chenStockInfo.stockId}</if>
             <if test="chenStockInfo.createTime != null ">and info.create_time = #{chenStockInfo.createTime}</if>
             <if test="chenStockInfo.stockNumber != null ">and info.stock_number = #{chenStockInfo.stockNumber}</if>

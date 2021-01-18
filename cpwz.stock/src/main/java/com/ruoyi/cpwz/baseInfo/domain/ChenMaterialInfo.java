@@ -5,6 +5,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * 商品信息对象 chen_material_info
@@ -132,4 +133,24 @@ public class ChenMaterialInfo extends BaseEntity
             .append("unit", getUnit())
             .toString();
     }
+    public String uniqueAttributes() {
+        return materialModel + materialName;
+    }
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//        ChenMaterialInfo that = (ChenMaterialInfo) o;
+//        return
+//                Objects.equals(materialId, that.materialId) &&
+//                Objects.equals(materialModel, that.materialModel) &&
+//                Objects.equals(materialName, that.materialName)
+//                ;
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return Objects.hash(materialId,materialModel, materialName);
+//    }
 }

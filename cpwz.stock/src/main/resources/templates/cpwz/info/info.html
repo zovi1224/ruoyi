@@ -17,6 +17,7 @@
                             <li>
                                 <label>商品名称：</label>
                                 <input type="text" name="materialName"/>
+                                <input type="hidden" name="unit" id="unit">
                             </li>
                             <li>
                                 <label>规格型号：</label>
@@ -57,6 +58,9 @@
                 <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="cpwz:info:export">
                     <i class="fa fa-download"></i> 导出
                 </a>
+                <a class="btn btn-warning" onclick="searchRepeat()" shiro:hasPermission="cpwz:info:export">
+                    <i class="fa fa-download"></i> 查询重复商品
+                </a>
             </div>
             <div class="col-sm-12 select-table table-striped">
                 <table id="bootstrap-table"></table>
@@ -71,14 +75,19 @@
         var stockDatas = [[${@dict.getType('stock_info')}]];
         var typeDatas = [[${typeList}]];
         var prefix = ctx + "cpwz/info";
-
+        function searchRepeat(){
+            $("#unit").val("repeat");
+            $.table.search();
+        }
         $(function() {
             var options = {
+                pagination:false,
                 url: prefix + "/list/{id}",
                 createUrl: prefix + "/add",
                 updateUrl: prefix + "/edit/{id}",
                 removeUrl: prefix + "/remove",
                 exportUrl: prefix + "/export",
+                detailUrl: prefix + "/detail/{id}",
                 modalName: "商品信息",
                 columns: [{
                     checkbox: true
@@ -135,12 +144,53 @@
                         var actions = [];
                         actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.edit(\'' + row.materialId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
                         actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.materialId + '\')"><i class="fa fa-remove"></i>删除</a>');
+                        actions.push('<a class="btn btn-info btn-xs" href="javascript:void(0)" onclick="$.operate.detail(\'' + row.materialId + '\')"><i class="fa fa-info"></i>查看库存信息</a>');
                         return actions.join('');
                     }
                 }]
             };
+
             $.table.init(options);
         });
+        function openDetail(materialId){
+
+
+            $.ajax({
+                type: 'POST',
+                url: ctx+"cpwz/stockInfo/list/stock_"+materialId,
+                // data: {infoIds:"stock_"+materialId},
+                dataType : "html",
+                success: function(result) {
+                    var htmlCont = result;//返回的结果页面
+                    layer.open({
+                        type: 1,//弹出框类型
+                        title: '庫存详细',
+                        shadeClose: false, //点击遮罩关闭层
+                        area : ['60%' , '90%'],
+                        shift:1,
+                        content: htmlCont,//将结果页面放入layer弹出层中
+                        success: function(layero, index){
+
+                        }
+                    });
+                }
+            });
+
+
+
+            // var options = {
+            //     title: "庫存详细",
+            //     width: 800,
+            //     height: 400,
+            //     url: ctx+"cpwz/stockInfo/list/stock_"+materialId,
+            //     skin: 'layui-layer-gray',
+            //     btn: ['关闭'],
+            //     yes: function (index, layero) {
+            //         layer.close(index);
+            //     }
+            // };
+            // $.modal.openOptions(options);
+        }
     </script>
 </body>
 </html>

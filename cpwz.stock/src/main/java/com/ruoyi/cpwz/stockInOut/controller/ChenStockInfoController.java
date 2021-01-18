@@ -1,7 +1,8 @@
-package com.ruoyi.cpwz.web.controller.cpwz;
+package com.ruoyi.cpwz.stockInOut.controller;
 
 import java.util.List;
 
+import com.ruoyi.common.utils.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -48,11 +49,14 @@ public class ChenStockInfoController extends BaseController {
     @ResponseBody
     public TableDataInfo list(ChenStockInfo chenStockInfo,@PathVariable("infoIds") String infoIds){
         startPage();
-        if (chenStockInfo.getStockId().equals("")){
+        String stock = chenStockInfo.getStockId();
+        if (chenStockInfo.getStockId().isEmpty()){
             chenStockInfo.setStockId(null);
         };
-        if(!"".equals(infoIds)){
-
+        if(infoIds.contains("stock")){
+            String materialId = infoIds.split("_")[1];
+            infoIds = "";
+            chenStockInfo.setMaterialId(Long.parseLong(materialId));
         }
         List<ChenStockInfo> list = chenStockInfoService.selectChenStockInfoList(chenStockInfo,infoIds);
         return getDataTable(list);
