@@ -31,13 +31,13 @@
     <select id="selectChenStockInfoList" resultMap="ChenStockInfoResult">
         <include refid="selectChenStockInfoVo"/>
         <where>
-            <if test="chenStockInfo.materialName != null  and chenStockInfo.materialName != ''">and material_name like
-                concat('%', #{materialName},
+            <if test="chenStockInfo.materialName != null  and chenStockInfo.materialName != ''">and m.material_name like
+                concat('%', #{chenStockInfo.materialName},
                 '%')
             </if>
-            <if test="chenStockInfo.materialModel != null  and chenStockInfo.materialModel != ''">and material_model
+            <if test="chenStockInfo.materialModel != null  and chenStockInfo.materialModel != ''">and m.material_model
                 like concat('%',
-                #{materialModel},
+                #{chenStockInfo.materialModel},
                 '%')
             </if>
             <if test="chenStockInfo.typeId != null ">and type.type_id = #{chenStockInfo.typeId}</if>
