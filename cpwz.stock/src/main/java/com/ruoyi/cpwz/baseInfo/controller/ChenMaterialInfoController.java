@@ -66,7 +66,7 @@ public class ChenMaterialInfoController extends BaseController {
     public TableDataInfo list(ChenMaterialInfo chenMaterialInfo, @PathVariable("meterialIds") String meterialIds) {
         startPage();
         List<ChenMaterialInfo> list = new ArrayList<>();
-        if (chenMaterialInfo.getUnit().equals("repeat")) {
+        if (chenMaterialInfo.getUnit()!=null&&chenMaterialInfo.getUnit().equals("repeat")) {
             chenMaterialInfo.setUnit(null);
             final List<ChenMaterialInfo> thisList =  chenMaterialInfoService.selectChenMaterialInfoList(chenMaterialInfo);
 //            List<ChenMaterialInfo> intersection = list.stream().filter(item -> item.getMaterialName().equals()).collect(toList());
