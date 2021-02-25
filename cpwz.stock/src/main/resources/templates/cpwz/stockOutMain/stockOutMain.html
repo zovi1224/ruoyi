@@ -120,7 +120,11 @@
                 return;
             } else {
                 var saveToStockInfo = true;
+                debugger
                 var outMainData = $.common.formToJSON("myForm");
+                if(outMainData.userId=='无'){
+                    delete outMainData.userId;
+                }
                 if ($.validate.form()) {
                     saveTableAndCalculateProfitAndToalPrice(tableData, saveToStockInfo, JSON.stringify(outMainData));
                 }
